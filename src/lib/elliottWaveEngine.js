@@ -70,13 +70,53 @@ export function detectPivots(candles, depth = 5) {
 
 /**
  * Auto-detect whether the recent trend is bullish or bearish.
- * Uses the last ~7 pivots slope (matching Pine's logic).
+ *
+ * Uses a multi-factor approach:
+ *  1. Broad structure: Is the overall move from the earliest recent pivot positive? (50% weight)
+ *  2. Higher-highs / higher-lows pattern (30% weight)
+ *  3. Short-term momentum: last few pivots (20% weight)
+ *
+ * This prevents a short pullback from flipping a clearly bullish stock to bearish.
  */
 export function determineTrend(pivots) {
-    if (pivots.length < 2) return true; // default bullish
+    if (pivots.length < 3) return true; // default bullish
+
     const sz = pivots.length;
-    const startIdx = Math.max(0, sz - 7);
-    return pivots[sz - 1].price > pivots[startIdx].price;
+    const recentStart = Math.max(0, sz - 20);
+
+    // Factor 1: Broad direction (first recent pivot → last pivot)
+    const broadMove = pivots[sz - 1].price - pivots[recentStart].price;
+    const broadScore = broadMove > 0 ? 1 : -1;
+
+    // Factor 2: Higher-highs / higher-lows pattern
+    const highs = [];
+    const lows = [];
+    for (let i = recentStart; i < sz; i++) {
+        if (pivots[i].type === 'high') highs.push(pivots[i].price);
+        else lows.push(pivots[i].price);
+    }
+
+    let hhScore = 0;
+    if (highs.length >= 2) {
+        // Compare the last two highs
+        hhScore = highs[highs.length - 1] > highs[highs.length - 2] ? 1 : -1;
+    }
+    let hlScore = 0;
+    if (lows.length >= 2) {
+        // Compare the last two lows
+        hlScore = lows[lows.length - 1] > lows[lows.length - 2] ? 1 : -1;
+    }
+    const structureScore = (hhScore + hlScore) / 2;
+
+    // Factor 3: Short-term momentum (last 5 pivots)
+    const shortStart = Math.max(0, sz - 5);
+    const shortMove = pivots[sz - 1].price - pivots[shortStart].price;
+    const momentumScore = shortMove > 0 ? 1 : -1;
+
+    // Weighted composite
+    const composite = broadScore * 0.50 + structureScore * 0.30 + momentumScore * 0.20;
+
+    return composite >= 0;
 }
 
 // ──────────────────────────────────────────────
