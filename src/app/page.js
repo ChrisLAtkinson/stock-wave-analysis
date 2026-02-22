@@ -8,6 +8,7 @@ const StockChart = dynamic(() => import('./components/StockChart'), { ssr: false
 const QuantScorecard = dynamic(() => import('./components/QuantScorecard'), { ssr: false });
 const EarningsTracker = dynamic(() => import('./components/EarningsTracker'), { ssr: false });
 const SentimentPanel = dynamic(() => import('./components/SentimentPanel'), { ssr: false });
+const BacktestPanel = dynamic(() => import('./components/BacktestPanel'), { ssr: false });
 
 export default function Home() {
   const [ticker, setTicker] = useState('');
@@ -388,6 +389,13 @@ export default function Home() {
               </div>
             </div>
           )}
+
+          {/* Full-Width: RSI Backtest */}
+          <div className="col-span-12 fade-in" style={{ animationDelay: '0.45s' }}>
+            <div className="glass-panel">
+              <BacktestPanel ticker={ticker} />
+            </div>
+          </div>
         </>
       )}
     </main>
