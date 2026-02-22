@@ -1,17 +1,31 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { createChart, LineSeries, AreaSeries } from 'lightweight-charts';
-import { BarChart3, Clock, TrendingUp, TrendingDown, Target, Shield, Zap, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { createChart, AreaSeries } from 'lightweight-charts';
+import { BarChart3, Clock, TrendingUp, Shield, Zap, ArrowUpRight, ArrowDownRight, ChevronDown } from 'lucide-react';
+
+const STRATEGIES = [
+    { id: 'rsi2', name: 'RSI(2) Mean Reversion', icon: '📉', color: '#6366f1' },
+    { id: 'goldenCross', name: 'Golden Cross / Death Cross', icon: '✨', color: '#f59e0b' },
+    { id: 'macdCrossover', name: 'MACD Crossover', icon: '📊', color: '#10b981' },
+    { id: 'bollingerBounce', name: 'Bollinger Band Bounce', icon: '🎯', color: '#ec4899' },
+    { id: 'breakout', name: 'Donchian Breakout (Turtle)', icon: '🚀', color: '#3b82f6' },
+];
 
 const PERIODS = [
-    { key: '3m', label: '3 Months' },
-    { key: '6m', label: '6 Months' },
-    { key: '1y', label: '1 Year' },
-    { key: '2y', label: '2 Years' },
-    { key: '3y', label: '3 Years' },
-    { key: '5y', label: '5 Years' },
+    { key: '3m', label: '3M' },
+    { key: '6m', label: '6M' },
+    { key: '1y', label: '1Y' },
+    { key: '2y', label: '2Y' },
+    { key: '3y', label: '3Y' },
+    { key: '5y', label: '5Y' },
 ];
+
+const RULE_ICONS = {
+    shield: <Shield size={14} />,
+    entry: <ArrowDownRight size={14} style={{ color: 'var(--success)' }} />,
+    exit: <ArrowUpRight size={14} style={{ color: 'var(--danger)' }} />,
+};
 
 function EquityCurveChart({ equityCurve }) {
     const containerRef = useRef(null);
@@ -19,172 +33,109 @@ function EquityCurveChart({ equityCurve }) {
 
     useEffect(() => {
         if (!containerRef.current || !equityCurve || equityCurve.length < 2) return;
-
-        if (chartRef.current) {
-            chartRef.current.remove();
-            chartRef.current = null;
-        }
+        if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
 
         const chart = createChart(containerRef.current, {
             width: containerRef.current.clientWidth,
-            height: 220,
-            layout: {
-                background: { color: 'transparent' },
-                textColor: '#94a3b8',
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 11,
-            },
-            grid: {
-                vertLines: { color: 'rgba(255,255,255,0.02)' },
-                horzLines: { color: 'rgba(255,255,255,0.02)' },
-            },
-            rightPriceScale: {
-                borderColor: 'rgba(255,255,255,0.06)',
-                scaleMargins: { top: 0.05, bottom: 0.05 },
-            },
-            timeScale: {
-                borderColor: 'rgba(255,255,255,0.06)',
-                timeVisible: false,
-            },
-            crosshair: {
-                mode: 0,
-                vertLine: { color: 'rgba(99,102,241,0.3)', labelBackgroundColor: '#6366f1' },
-                horzLine: { color: 'rgba(99,102,241,0.3)', labelBackgroundColor: '#6366f1' },
-            },
+            height: 200,
+            layout: { background: { color: 'transparent' }, textColor: '#94a3b8', fontFamily: "'Inter', sans-serif", fontSize: 11 },
+            grid: { vertLines: { color: 'rgba(255,255,255,0.02)' }, horzLines: { color: 'rgba(255,255,255,0.02)' } },
+            rightPriceScale: { borderColor: 'rgba(255,255,255,0.06)', scaleMargins: { top: 0.05, bottom: 0.05 } },
+            timeScale: { borderColor: 'rgba(255,255,255,0.06)', timeVisible: false },
+            crosshair: { mode: 0, vertLine: { color: 'rgba(99,102,241,0.3)', labelBackgroundColor: '#6366f1' }, horzLine: { color: 'rgba(99,102,241,0.3)', labelBackgroundColor: '#6366f1' } },
             handleScroll: { vertTouchDrag: false },
         });
-
         chartRef.current = chart;
 
-        // Determine overall performance color
         const startVal = equityCurve[0].equity;
         const endVal = equityCurve[equityCurve.length - 1].equity;
         const isPositive = endVal >= startVal;
 
         const series = chart.addSeries(AreaSeries, {
             lineColor: isPositive ? '#10b981' : '#ef4444',
-            topColor: isPositive ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)',
-            bottomColor: isPositive ? 'rgba(16, 185, 129, 0.02)' : 'rgba(239, 68, 68, 0.02)',
-            lineWidth: 2,
-            crosshairMarkerVisible: true,
-            lastValueVisible: true,
-            priceLineVisible: false,
+            topColor: isPositive ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)',
+            bottomColor: isPositive ? 'rgba(16,185,129,0.02)' : 'rgba(239,68,68,0.02)',
+            lineWidth: 2, crosshairMarkerVisible: true, lastValueVisible: true, priceLineVisible: false,
         });
-
-        // Add baseline at starting equity
-        series.createPriceLine({
-            price: startVal,
-            color: 'rgba(148, 163, 184, 0.3)',
-            lineWidth: 1,
-            lineStyle: 2,
-            axisLabelVisible: false,
-            title: 'Start',
-        });
-
+        series.createPriceLine({ price: startVal, color: 'rgba(148,163,184,0.3)', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: '$10K' });
         series.setData(equityCurve.map(e => ({ time: e.time, value: e.equity })));
         chart.timeScale().fitContent();
 
-        const handleResize = () => {
-            if (chartRef.current && containerRef.current) {
-                chartRef.current.applyOptions({ width: containerRef.current.clientWidth });
-            }
-        };
+        const handleResize = () => { if (chartRef.current && containerRef.current) chartRef.current.applyOptions({ width: containerRef.current.clientWidth }); };
         window.addEventListener('resize', handleResize);
-
-        return () => {
-            window.removeEventListener('resize', handleResize);
-            if (chartRef.current) {
-                chartRef.current.remove();
-                chartRef.current = null;
-            }
-        };
+        return () => { window.removeEventListener('resize', handleResize); if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; } };
     }, [equityCurve]);
 
-    return (
-        <div
-            ref={containerRef}
-            style={{
-                width: '100%',
-                height: '220px',
-                borderRadius: '10px',
-                overflow: 'hidden',
-                background: 'rgba(0,0,0,0.15)',
-                border: '1px solid rgba(255,255,255,0.04)',
-            }}
-        />
-    );
+    return <div ref={containerRef} style={{ width: '100%', height: '200px', borderRadius: '10px', overflow: 'hidden', background: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)' }} />;
 }
 
 export default function BacktestPanel({ ticker }) {
+    const [strategy, setStrategy] = useState('rsi2');
     const [period, setPeriod] = useState('1y');
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
     const [showAllTrades, setShowAllTrades] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
 
     useEffect(() => {
         if (!ticker) return;
-        fetchBacktest(period);
-    }, [ticker, period]);
+        fetchBacktest(strategy, period);
+    }, [ticker, strategy, period]);
 
-    const fetchBacktest = async (p) => {
+    const fetchBacktest = async (s, p) => {
         setLoading(true);
         setError('');
+        setShowAllTrades(false);
         try {
-            const res = await fetch(`/api/stock/${ticker}/backtest?period=${p}`);
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || 'Backtest failed');
-            }
-            const result = await res.json();
-            setData(result);
-        } catch (err) {
-            setError(err.message);
-            setData(null);
-        } finally {
-            setLoading(false);
-        }
+            const res = await fetch(`/api/stock/${ticker}/backtest?period=${p}&strategy=${s}`);
+            if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Backtest failed'); }
+            setData(await res.json());
+        } catch (err) { setError(err.message); setData(null); }
+        finally { setLoading(false); }
     };
 
-    const formatDollar = (v) => {
-        if (v == null) return '—';
-        return v >= 0 ? `$${v.toLocaleString()}` : `-$${Math.abs(v).toLocaleString()}`;
-    };
-
-    const formatPct = (v) => {
-        if (v == null) return '—';
-        const sign = v >= 0 ? '+' : '';
-        return `${sign}${v.toFixed(2)}%`;
-    };
+    const activeStrategy = STRATEGIES.find(s => s.id === strategy) || STRATEGIES[0];
+    const formatDollar = (v) => v == null ? '—' : v >= 0 ? `$${v.toLocaleString()}` : `-$${Math.abs(v).toLocaleString()}`;
+    const formatPct = (v) => v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
 
     return (
         <div className="backtest-panel">
-            {/* Header */}
+            {/* Header with Strategy Selector */}
             <div className="backtest-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <BarChart3 size={20} style={{ color: '#6366f1' }} />
-                    <h3 className="text-h3">RSI(2) Mean-Reversion Backtest</h3>
-                </div>
-                <div className="backtest-strategy-badge">
-                    <Zap size={12} /> Long when RSI(2) &lt; 10 &amp; Price &gt; 200 SMA
+                    <BarChart3 size={20} style={{ color: activeStrategy.color }} />
+                    <h3 className="text-h3">Strategy Backtest</h3>
                 </div>
             </div>
 
-            {/* Strategy Rules */}
-            <div className="backtest-rules">
-                <div className="backtest-rule">
-                    <Shield size={14} />
-                    <span>Only trade <strong>LONG</strong> above 200-day MA</span>
-                </div>
-                <div className="backtest-rule">
-                    <ArrowDownRight size={14} style={{ color: 'var(--success)' }} />
-                    <span><strong>BUY</strong> when RSI(2) &lt; 10 (oversold)</span>
-                </div>
-                <div className="backtest-rule">
-                    <ArrowUpRight size={14} style={{ color: 'var(--danger)' }} />
-                    <span><strong>EXIT</strong> when RSI(2) &gt; 90 or after 10 days</span>
-                </div>
+            {/* Strategy Selector Cards */}
+            <div className="strategy-selector">
+                {STRATEGIES.map(s => (
+                    <button
+                        key={s.id}
+                        className={`strategy-card ${strategy === s.id ? 'active' : ''}`}
+                        onClick={() => setStrategy(s.id)}
+                        style={{ '--strat-color': s.color }}
+                        disabled={loading}
+                    >
+                        <span className="strategy-card-icon">{s.icon}</span>
+                        <span className="strategy-card-name">{s.name}</span>
+                    </button>
+                ))}
             </div>
+
+            {/* Strategy Rules */}
+            {data?.strategy?.rules && (
+                <div className="backtest-rules">
+                    {data.strategy.rules.map((rule, i) => (
+                        <div key={i} className="backtest-rule">
+                            {RULE_ICONS[rule.icon] || <Shield size={14} />}
+                            <span dangerouslySetInnerHTML={{ __html: rule.text.replace(/\b(BUY|SELL|EXIT|LONG)\b/g, '<strong>$1</strong>') }} />
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Period Selector */}
             <div className="backtest-periods">
@@ -203,37 +154,29 @@ export default function BacktestPanel({ ticker }) {
             {loading && (
                 <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
                     <div className="spinner" style={{ margin: '0 auto 12px' }} />
-                    Running backtest for {PERIODS.find(p => p.key === period)?.label}...
+                    Running {activeStrategy.name} backtest...
                 </div>
             )}
 
             {error && (
-                <div style={{ textAlign: 'center', padding: '24px', color: 'var(--danger)', fontSize: '0.9rem' }}>
-                    {error}
-                </div>
+                <div style={{ textAlign: 'center', padding: '24px', color: 'var(--danger)', fontSize: '0.9rem' }}>{error}</div>
             )}
 
             {data && !loading && (
                 <>
                     {/* Performance Stats Grid */}
                     <div className="backtest-stats-grid">
-                        <div className="backtest-stat-card highlight">
+                        <div className="backtest-stat-card highlight" style={{ '--strat-color': activeStrategy.color }}>
                             <div className="backtest-stat-label">Strategy Return</div>
-                            <div
-                                className="backtest-stat-value"
-                                style={{ color: data.stats.totalReturnPct >= 0 ? 'var(--success)' : 'var(--danger)' }}
-                            >
+                            <div className="backtest-stat-value" style={{ color: data.stats.totalReturnPct >= 0 ? 'var(--success)' : 'var(--danger)' }}>
                                 {formatPct(data.stats.totalReturnPct)}
                             </div>
                             <div className="backtest-stat-sub">{formatDollar(data.stats.totalReturn)} P&L</div>
                         </div>
 
                         <div className="backtest-stat-card">
-                            <div className="backtest-stat-label">Buy & Hold Return</div>
-                            <div
-                                className="backtest-stat-value"
-                                style={{ color: data.stats.buyHoldReturn >= 0 ? 'var(--success)' : 'var(--danger)' }}
-                            >
+                            <div className="backtest-stat-label">Buy & Hold</div>
+                            <div className="backtest-stat-value" style={{ color: data.stats.buyHoldReturn >= 0 ? 'var(--success)' : 'var(--danger)' }}>
                                 {formatPct(data.stats.buyHoldReturn)}
                             </div>
                             <div className="backtest-stat-sub">Benchmark</div>
@@ -255,66 +198,49 @@ export default function BacktestPanel({ ticker }) {
 
                         <div className="backtest-stat-card">
                             <div className="backtest-stat-label">Avg Win</div>
-                            <div className="backtest-stat-value" style={{ color: 'var(--success)' }}>
-                                {formatPct(data.stats.avgWinPct)}
-                            </div>
+                            <div className="backtest-stat-value" style={{ color: 'var(--success)' }}>{formatPct(data.stats.avgWinPct)}</div>
                         </div>
 
                         <div className="backtest-stat-card">
                             <div className="backtest-stat-label">Avg Loss</div>
-                            <div className="backtest-stat-value" style={{ color: 'var(--danger)' }}>
-                                {formatPct(data.stats.avgLossPct)}
-                            </div>
+                            <div className="backtest-stat-value" style={{ color: 'var(--danger)' }}>{formatPct(data.stats.avgLossPct)}</div>
                         </div>
 
                         <div className="backtest-stat-card">
                             <div className="backtest-stat-label">Max Drawdown</div>
-                            <div className="backtest-stat-value" style={{ color: 'var(--danger)' }}>
-                                {formatPct(-data.stats.maxDrawdown)}
-                            </div>
+                            <div className="backtest-stat-value" style={{ color: 'var(--danger)' }}>{formatPct(-data.stats.maxDrawdown)}</div>
                         </div>
 
                         <div className="backtest-stat-card">
-                            <div className="backtest-stat-label">
-                                {data.stats.totalReturnPct > data.stats.buyHoldReturn ? 'Alpha' : 'Underperformance'}
-                            </div>
-                            <div
-                                className="backtest-stat-value"
-                                style={{ color: data.stats.totalReturnPct > data.stats.buyHoldReturn ? '#6366f1' : 'var(--danger)' }}
-                            >
+                            <div className="backtest-stat-label">{data.stats.totalReturnPct > data.stats.buyHoldReturn ? 'Alpha' : 'Underperformance'}</div>
+                            <div className="backtest-stat-value" style={{ color: data.stats.totalReturnPct > data.stats.buyHoldReturn ? activeStrategy.color : 'var(--danger)' }}>
                                 {formatPct(data.stats.totalReturnPct - data.stats.buyHoldReturn)}
                             </div>
                         </div>
                     </div>
 
                     {/* Equity Curve */}
-                    {data.equityCurve && data.equityCurve.length > 2 && (
+                    {data.equityCurve?.length > 2 && (
                         <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                <TrendingUp size={16} style={{ color: '#6366f1' }} />
+                                <TrendingUp size={16} style={{ color: activeStrategy.color }} />
                                 <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>Equity Curve</span>
-                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: 'auto' }}>
-                                    $10,000 starting capital
-                                </span>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: 'auto' }}>$10,000 starting capital</span>
                             </div>
                             <EquityCurveChart equityCurve={data.equityCurve} />
                         </div>
                     )}
 
                     {/* Trade Log */}
-                    {data.trades && data.trades.length > 0 && (
+                    {data.trades?.length > 0 && (
                         <div className="backtest-trade-log">
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Clock size={16} style={{ color: '#6366f1' }} />
+                                    <Clock size={16} style={{ color: activeStrategy.color }} />
                                     <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>Trade Log</span>
                                 </div>
                                 {data.trades.length > 5 && (
-                                    <button
-                                        className="backtest-period-btn"
-                                        onClick={() => setShowAllTrades(!showAllTrades)}
-                                        style={{ fontSize: '0.8rem', padding: '4px 12px' }}
-                                    >
+                                    <button className="backtest-period-btn" onClick={() => setShowAllTrades(!showAllTrades)} style={{ fontSize: '0.8rem', padding: '4px 12px' }}>
                                         {showAllTrades ? 'Show Less' : `Show All (${data.trades.length})`}
                                     </button>
                                 )}
@@ -322,16 +248,7 @@ export default function BacktestPanel({ ticker }) {
                             <div className="backtest-table-wrapper">
                                 <table className="backtest-table">
                                     <thead>
-                                        <tr>
-                                            <th>Entry</th>
-                                            <th>Exit</th>
-                                            <th>Entry $</th>
-                                            <th>Exit $</th>
-                                            <th>Days</th>
-                                            <th>P&L</th>
-                                            <th>Return</th>
-                                            <th>Reason</th>
-                                        </tr>
+                                        <tr><th>Entry</th><th>Exit</th><th>Entry $</th><th>Exit $</th><th>Days</th><th>P&L</th><th>Return</th><th>Reason</th></tr>
                                     </thead>
                                     <tbody>
                                         {(showAllTrades ? data.trades : data.trades.slice(-5)).map((t, i) => (
@@ -347,11 +264,7 @@ export default function BacktestPanel({ ticker }) {
                                                 <td style={{ color: t.pnlPct >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
                                                     {formatPct(t.pnlPct)}
                                                 </td>
-                                                <td>
-                                                    <span className={`trade-reason ${t.exitReason.includes('RSI') ? 'rsi' : 'time'}`}>
-                                                        {t.exitReason}
-                                                    </span>
-                                                </td>
+                                                <td><span className={`trade-reason ${t.exitReason.toLowerCase().includes('cross') || t.exitReason.toLowerCase().includes('rsi') || t.exitReason.toLowerCase().includes('band') || t.exitReason.toLowerCase().includes('breakout') || t.exitReason.toLowerCase().includes('macd') || t.exitReason.toLowerCase().includes('break') ? 'rsi' : 'time'}`}>{t.exitReason}</span></td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -360,9 +273,9 @@ export default function BacktestPanel({ ticker }) {
                         </div>
                     )}
 
-                    {data.trades && data.trades.length === 0 && (
+                    {data.trades?.length === 0 && (
                         <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)' }}>
-                            No trades triggered during this period. The RSI(2) strategy requires price above the 200-day MA along with an oversold RSI reading — conditions that weren't met.
+                            No trades triggered during this period. Try a longer timeframe or different strategy.
                         </div>
                     )}
                 </>

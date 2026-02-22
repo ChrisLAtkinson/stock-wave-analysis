@@ -1,5 +1,5 @@
 import yahooFinanceRaw from 'yahoo-finance2';
-import { runBacktest } from '@/lib/backtestEngine';
+import { runBacktest, STRATEGIES } from '@/lib/backtestEngine';
 
 const YF = yahooFinanceRaw.default || yahooFinanceRaw;
 const yahooFinance = typeof YF === 'function' ? new YF() : YF;
@@ -9,6 +9,7 @@ export async function GET(request, { params }) {
         const { ticker } = await params;
         const { searchParams } = new URL(request.url);
         const period = searchParams.get('period') || '1y';
+        const strategyId = searchParams.get('strategy') || 'rsi2';
 
         // Map period to date range — need extra 200 days for SMA warmup
         const periodMap = {
@@ -55,7 +56,7 @@ export async function GET(request, { params }) {
         analysisStart.setDate(analysisStart.getDate() - (periodDaysMap[period] || 365));
         const analysisStartStr = analysisStart.toISOString().split('T')[0];
 
-        const result = runBacktest(candles, {});
+        const result = runBacktest(candles, strategyId);
 
         // Filter equity curve and trades to the analysis window
         const filteredEquity = result.equityCurve.filter(e => e.time >= analysisStartStr);
@@ -83,7 +84,8 @@ export async function GET(request, { params }) {
         return Response.json({
             period,
             ticker: ticker.toUpperCase(),
-            params: result.params,
+            strategyId,
+            strategy: STRATEGIES[strategyId] || STRATEGIES.rsi2,
             stats: {
                 totalTrades: filteredTrades.length,
                 winners: winners.length,
