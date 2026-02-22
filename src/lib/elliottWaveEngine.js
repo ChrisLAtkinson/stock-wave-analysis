@@ -307,28 +307,28 @@ export function projectWaves(originPrice, w1Len, simI, isBull, currentPrice, num
         if (cycleNum % 2 === 1) {
             // Corrective cycle
             switch (currIdx) {
-                case 0: relTp = cw1; wn = 'Wave A'; wl = 'A'; wf = '1.000x'; isMajor = true; break;
+                case 0: relTp = cw1; wn = 'WAVE A'; wl = 'A'; wf = '1.000'; isMajor = true; break;
                 case 1: relTp = cw2a; break;
                 case 2: relTp = cw2b; break;
-                case 3: relTp = cw2c; wn = 'Wave B'; wl = 'B'; wf = '0.618x'; isMajor = true; break;
-                case 4: relTp = cw3; wn = 'Wave C'; wl = 'C'; wf = '1.618x'; isMajor = true; break;
+                case 3: relTp = cw2c; wn = 'WAVE B'; wl = 'B'; wf = '0.618'; isMajor = true; break;
+                case 4: relTp = cw3; wn = 'WAVE C'; wl = 'C'; wf = '1.618'; isMajor = true; break;
                 case 5: relTp = cw4a; break;
                 case 6: relTp = cw4b; break;
-                case 7: relTp = cw4c; wn = 'Wave X'; wl = 'X'; wf = '0.382x'; isMajor = true; break;
-                case 8: relTp = cw5; wn = 'Wave Y'; wl = 'Y'; wf = '1.000x'; isMajor = true; break;
+                case 7: relTp = cw4c; wn = 'WAVE X'; wl = 'X'; wf = '0.382'; isMajor = true; break;
+                case 8: relTp = cw5; wn = 'WAVE Y'; wl = 'Y'; wf = '1.000'; isMajor = true; break;
             }
         } else {
             // Motive cycle
             switch (currIdx) {
-                case 0: relTp = cw1; wn = 'Wave 1'; wl = '(1)'; wf = '1.00x W1'; isMajor = true; break;
-                case 1: relTp = cw2a; wn = 'Wave 2A'; wl = 'A'; wf = '0.382x'; break;
-                case 2: relTp = cw2b; wn = 'Wave 2B'; wl = 'B'; wf = '0.500x'; break;
-                case 3: relTp = cw2c; wn = 'Wave 2C'; wl = '(2)'; wf = '0.618x'; isMajor = true; break;
-                case 4: relTp = cw3; wn = 'Wave 3'; wl = '(3)'; wf = '1.618x W1'; isMajor = true; break;
-                case 5: relTp = cw4a; wn = 'Wave 4A'; wl = 'A'; wf = '0.236x'; break;
-                case 6: relTp = cw4b; wn = 'Wave 4B'; wl = 'B'; wf = '0.500x'; break;
-                case 7: relTp = cw4c; wn = 'Wave 4C'; wl = '(4)'; wf = '0.382x'; isMajor = true; break;
-                case 8: relTp = cw5; wn = 'Wave 5'; wl = '(5)'; wf = '1.000x'; isMajor = true; break;
+                case 0: relTp = cw1; wn = 'WAVE 1'; wl = '1'; wf = '1.000'; isMajor = true; break;
+                case 1: relTp = cw2a; wn = 'Wave 2a'; wl = '2a'; wf = '0.382'; break;
+                case 2: relTp = cw2b; wn = 'Wave 2b'; wl = '2b'; wf = '0.500'; break;
+                case 3: relTp = cw2c; wn = 'WAVE 2'; wl = '2'; wf = '0.618'; isMajor = true; break;
+                case 4: relTp = cw3; wn = 'WAVE 3'; wl = '3'; wf = '1.618'; isMajor = true; break;
+                case 5: relTp = cw4a; wn = 'Wave 4a'; wl = '4a'; wf = '0.236'; break;
+                case 6: relTp = cw4b; wn = 'Wave 4b'; wl = '4b'; wf = '0.500'; break;
+                case 7: relTp = cw4c; wn = 'WAVE 4'; wl = '4'; wf = '0.382'; isMajor = true; break;
+                case 8: relTp = cw5; wn = 'WAVE 5'; wl = '5'; wf = '1.000'; isMajor = true; break;
             }
         }
 
@@ -424,11 +424,11 @@ export function analyzeElliottWaves(candles) {
 
     // 10. Structural wave points for chart markers
     const structuralPoints = [
-        { ...pivots[structural.origin], waveLabel: '(0)' },
-        { ...pivots[structural.w1], waveLabel: '(1)' },
-        { ...pivots[structural.w2], waveLabel: '(2)' },
-        { ...pivots[structural.w3], waveLabel: '(3)' },
-        { ...pivots[structural.w4], waveLabel: '(4)' }
+        { ...pivots[structural.origin], waveLabel: '0' },
+        { ...pivots[structural.w1], waveLabel: '1' },
+        { ...pivots[structural.w2], waveLabel: '2' },
+        { ...pivots[structural.w3], waveLabel: '3' },
+        { ...pivots[structural.w4], waveLabel: '4' }
     ];
 
     return {

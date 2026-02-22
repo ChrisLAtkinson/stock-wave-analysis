@@ -85,14 +85,20 @@ export default function StockChart({
         if (structuralPoints.length > 0) {
             const markers = structuralPoints
                 .filter(sp => sp.time)
-                .map(sp => ({
-                    time: sp.time,
-                    position: sp.type === 'high' || sp.waveLabel === '(1)' || sp.waveLabel === '(3)' ? 'aboveBar' : 'belowBar',
-                    color: sp.waveLabel === '(0)' ? '#64748b' : (isBull ? '#3b82f6' : '#f59e0b'),
-                    shape: 'circle',
-                    text: sp.waveLabel,
-                    size: 2,
-                }))
+                .map(sp => {
+                    // Position impulse wave peaks above, troughs below
+                    const isAbove = isBull
+                        ? (sp.waveLabel === '1' || sp.waveLabel === '3' || sp.waveLabel === '5')
+                        : (sp.waveLabel === '0' || sp.waveLabel === '2' || sp.waveLabel === '4');
+                    return {
+                        time: sp.time,
+                        position: isAbove ? 'aboveBar' : 'belowBar',
+                        color: sp.waveLabel === '0' ? '#64748b' : (isBull ? '#3b82f6' : '#f59e0b'),
+                        shape: 'circle',
+                        text: sp.waveLabel,
+                        size: 2,
+                    };
+                })
                 .sort((a, b) => a.time.localeCompare(b.time));
 
             if (markers.length > 0) {
@@ -159,7 +165,7 @@ export default function StockChart({
                     lineWidth: 1,
                     lineStyle: 2,
                     axisLabelVisible: true,
-                    title: `${proj.label} ${proj.pctChange > 0 ? '+' : ''}${proj.pctChange}%`,
+                    title: `${proj.fibRatio} (${proj.target.toFixed(2)})`,
                 });
             });
         }
