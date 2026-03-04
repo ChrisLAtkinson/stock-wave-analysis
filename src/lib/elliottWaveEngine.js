@@ -482,7 +482,8 @@ export function analyzeElliottWaves(candles) {
         projections,
         tradeSetup,
         thematicStory,
-        invalidationLevel: originPrice
+        invalidationLevel: originPrice,
+        algoEngine: runAlgoEngine(candles, pivots, isBull, originPrice, w1Len)
     };
 }
 
@@ -523,4 +524,111 @@ function generateThematicStory(currentWave, isBull, confidence, projections, cur
     }
 
     return { bullCase, bearCase };
+}
+
+// ──────────────────────────────────────────────
+// 9. Multi-Model Entry Algorithm
+// ──────────────────────────────────────────────
+
+function calcDonchian(candles, period = 20) {
+    const res = [];
+    for (let i = 0; i < candles.length; i++) {
+        if (i < period - 1) {
+            res.push(null);
+            continue;
+        }
+        let upper = -Infinity;
+        let lower = Infinity;
+        for (let j = i - period + 1; j <= i; j++) {
+            if (candles[j].high > upper) upper = candles[j].high;
+            if (candles[j].low < lower) lower = candles[j].low;
+        }
+        res.push({ upper, lower, mid: (upper + lower) / 2 });
+    }
+    return res;
+}
+
+export function runAlgoEngine(candles, pivots, isBull, originPrice, w1Len) {
+    if (!candles || candles.length === 0) return null;
+    const currentPrice = candles[candles.length - 1].close;
+
+    const models = {
+        'classic': { w3Ext: 1.618, w4Ret: 0.382, w5Ext: 1.0 },
+        'extended': { w3Ext: 2.618, w4Ret: 0.236, w5Ext: 0.618 },
+        'neely': { w3Ext: 1.618, w4Ret: 0.618, w5Ext: 1.618 },
+        'harmonic': { w3Ext: 1.272, w4Ret: 0.500, w5Ext: 1.272 }
+    };
+
+    const targets = {};
+    const dir = isBull ? 1 : -1;
+    const baseLen = w1Len > 0 ? w1Len : originPrice * 0.1;
+
+    for (const key in models) {
+        const m = models[key];
+        const val1 = originPrice + (dir * baseLen);
+        const val2 = val1 - (dir * baseLen * 0.618);
+        const val3 = val2 + (dir * baseLen * m.w3Ext);
+        const val4 = val3 - (dir * Math.abs(val3 - val2) * m.w4Ret);
+        const val5 = val4 + (dir * baseLen * m.w5Ext);
+
+        targets[key] = [
+            { label: 'W3', val: val3 },
+            { label: 'W4', val: val4 },
+            { label: 'W5', val: val5 }
+        ];
+    }
+
+    const donchian = calcDonchian(candles);
+    const dcLast = donchian[donchian.length - 1];
+
+    let sumW3 = 0, sumW5 = 0;
+    const cnt = Object.keys(targets).length;
+    for (const k in targets) {
+        sumW3 += targets[k][0].val;
+        sumW5 += targets[k][2].val;
+    }
+    const meanW3 = sumW3 / cnt;
+    const meanW5 = sumW5 / cnt;
+
+    let dcPos = 0;
+    if (dcLast) {
+        const rng = dcLast.upper - dcLast.lower;
+        if (rng > 0) dcPos = ((currentPrice - dcLast.lower) / rng) * 100;
+    }
+
+    const pct = ((meanW5 - currentPrice) / currentPrice) * 100;
+    let score = 0, verdict = '';
+    const reasons = [];
+
+    if (pct > 20) {
+        score += 40; reasons.push(`+ Upside to Mean Target (${pct.toFixed(2)}%)`);
+    } else if (pct > 0) {
+        score += 20; reasons.push(`+ Moderate upside`);
+    } else {
+        reasons.push(`- Expected upside is negative`);
+    }
+
+    if (dcPos < 20) {
+        score += 60; verdict = "Strong Buy - Value Zone"; reasons.push("+ Bottom 20% of Donchian Channel");
+    } else if (dcPos < 50) {
+        score += 30; verdict = "Buy - Pullback Entry"; reasons.push("+ Below midline");
+    } else if (dcPos < 85) {
+        score += 10; verdict = "Hold / Neutral"; reasons.push("- Above midline, wait for pullback");
+    } else {
+        score -= 20; verdict = "Overbought - Wait"; reasons.push("- At Donchian ceiling");
+    }
+
+    return {
+        donchian,
+        targets,
+        scorecard: {
+            meanW3: meanW3,
+            meanW5: meanW5,
+            meanW5Chg: pct,
+            dcPos: dcPos,
+            score: Math.max(0, Math.min(100, score)),
+            verdict,
+            reasons
+        }
+    };
 }

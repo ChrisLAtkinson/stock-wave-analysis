@@ -1,19 +1,19 @@
 :root {
-  --background: #0a0f18;
-  /* Deep dark blue */
-  --surface: #131a26;
-  --surface-raised: rgba(255, 255, 255, 0.05);
-  --border: rgba(255, 255, 255, 0.1);
+  --background: #05080f;
+  /* Deep dark space blue */
+  --surface: #0b111a;
+  --surface-raised: rgba(0, 229, 255, 0.03);
+  --border: rgba(0, 229, 255, 0.1);
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --accent: #3b82f6;
-  /* Blueish accent */
-  --accent-glow: rgba(59, 130, 246, 0.5);
+  --text-secondary: #8c9baf;
+  --accent: #0ea5e9;
+  /* Cyan-ish accent */
+  --accent-glow: rgba(14, 165, 233, 0.6);
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
-  --glass-bg: rgba(19, 26, 38, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(11, 17, 26, 0.7);
+  --glass-border: rgba(0, 229, 255, 0.15);
 }
 
 * {
@@ -188,10 +188,11 @@ a:hover {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #00f0ff 0%, #0ea5e9 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.35));
 }
 
 /* Flex utilities */

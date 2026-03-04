@@ -1,6 +1,7 @@
 import yahooFinanceRaw from 'yahoo-finance2';
 import { NextResponse } from 'next/server';
 import { analyzeElliottWaves } from '@/lib/elliottWaveEngine';
+import { analyzeTechnicals } from '@/lib/technicalEngine';
 
 const YF = yahooFinanceRaw.default || yahooFinanceRaw;
 const yahooFinance = typeof YF === 'function' ? new YF() : YF;
@@ -12,10 +13,10 @@ export async function GET(request, { params }) {
     }
 
     try {
-        // Fetch 1 year of historical data
+        // Fetch 3 years of historical data
         const endDate = new Date();
         const startDate = new Date();
-        startDate.setFullYear(startDate.getFullYear() - 1);
+        startDate.setFullYear(startDate.getFullYear() - 3);
 
         const historical = await yahooFinance.historical(ticker, {
             period1: startDate,
@@ -40,6 +41,7 @@ export async function GET(request, { params }) {
 
         // Run the Elliott Wave analysis engine
         const analysis = analyzeElliottWaves(candles);
+        const technicals = analyzeTechnicals(candles);
 
         if (analysis.error) {
             return NextResponse.json({
@@ -52,6 +54,7 @@ export async function GET(request, { params }) {
         return NextResponse.json({
             ticker: ticker.toUpperCase(),
             ...analysis,
+            technicals,
             historical: candles
         });
     } catch (error) {

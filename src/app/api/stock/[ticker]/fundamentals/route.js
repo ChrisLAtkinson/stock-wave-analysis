@@ -1,6 +1,8 @@
 import yahooFinanceRaw from 'yahoo-finance2';
 import { NextResponse } from 'next/server';
 import { analyzeQuant } from '@/lib/quantEngine';
+import { analyzeBuffett } from '@/lib/buffettEngine';
+import { analyzeValuation } from '@/lib/valuationEngine';
 
 const YF = yahooFinanceRaw.default || yahooFinanceRaw;
 const yahooFinance = typeof YF === 'function' ? new YF() : YF;
@@ -37,11 +39,15 @@ export async function GET(request, { params }) {
     };
 
     const quant = analyzeQuant(quantData);
+    const buffett = analyzeBuffett(quantData);
+    const valuation = analyzeValuation(quantData);
 
     return NextResponse.json({
       quote,
       summary: quoteSummary,
-      quant
+      quant,
+      buffett,
+      valuation
     });
   } catch (error) {
     console.error('Error fetching fundamentals:', error);

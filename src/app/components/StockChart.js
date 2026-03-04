@@ -22,7 +22,8 @@ export default function StockChart({
     isBull = true,
     invalidationLevel,
     pivots = [],
-    currentPrice
+    currentPrice,
+    algoEngine = null
 }) {
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
@@ -141,6 +142,36 @@ export default function StockChart({
             }
         }
 
+        // ── Donchian Channels ──
+        if (algoEngine && algoEngine.donchian) {
+            const donchianUpper = chart.addSeries(LineSeries, {
+                color: 'rgba(56, 189, 248, 0.3)',
+                lineWidth: 1,
+                lineStyle: 0,
+                crosshairMarkerVisible: false,
+                lastValueVisible: false,
+                priceLineVisible: false,
+            });
+            const donchianLower = chart.addSeries(LineSeries, {
+                color: 'rgba(56, 189, 248, 0.3)',
+                lineWidth: 1,
+                lineStyle: 0,
+                crosshairMarkerVisible: false,
+                lastValueVisible: false,
+                priceLineVisible: false,
+            });
+            const upData = [], lowData = [];
+            for (let i = 0; i < historical.length; i++) {
+                const dc = algoEngine.donchian[i];
+                if (dc && historical[i]?.time) {
+                    upData.push({ time: historical[i].time, value: dc.upper });
+                    lowData.push({ time: historical[i].time, value: dc.lower });
+                }
+            }
+            if (upData.length > 0) donchianUpper.setData(upData);
+            if (lowData.length > 0) donchianLower.setData(lowData);
+        }
+
         // ── Invalidation Level ──
         if (invalidationLevel && invalidationLevel > 0) {
             const invalidationLine = {
@@ -178,8 +209,16 @@ export default function StockChart({
         };
         window.addEventListener('resize', handleResize);
 
-        // Fit content
-        chart.timeScale().fitContent();
+        // Default zoom to nearest year (252 trading days), allow scrolling back 3 years
+        const totalBars = historical.length;
+        if (totalBars > 252) {
+            chart.timeScale().setVisibleLogicalRange({
+                from: totalBars - 252,
+                to: totalBars
+            });
+        } else {
+            chart.timeScale().fitContent();
+        }
 
         return () => {
             window.removeEventListener('resize', handleResize);

@@ -14,7 +14,10 @@ export async function GET(request, { params }) {
     try {
         // Fetch news, earnings history, and quote data in parallel
         const [searchResult, quoteSummary] = await Promise.all([
-            yahooFinance.search(ticker, { newsCount: 20 }).catch(() => null),
+            yahooFinance.search(ticker, { newsCount: 20 }).catch(e => {
+                if (e.name === 'FailedYahooValidationError' && e.result) return e.result;
+                return { news: [] };
+            }),
             yahooFinance.quoteSummary(ticker, {
                 modules: ['earningsHistory', 'financialData', 'defaultKeyStatistics']
             }).catch(() => null)

@@ -9,6 +9,11 @@ const QuantScorecard = dynamic(() => import('./components/QuantScorecard'), { ss
 const EarningsTracker = dynamic(() => import('./components/EarningsTracker'), { ssr: false });
 const SentimentPanel = dynamic(() => import('./components/SentimentPanel'), { ssr: false });
 const BacktestPanel = dynamic(() => import('./components/BacktestPanel'), { ssr: false });
+const BuffettAnalysis = dynamic(() => import('./components/BuffettAnalysis'), { ssr: false });
+const StockTwitsFeed = dynamic(() => import('./components/StockTwitsFeed'), { ssr: false });
+const SeekingAlphaFeed = dynamic(() => import('./components/SeekingAlphaFeed'), { ssr: false });
+const TechnicalAnalysisPanel = dynamic(() => import('./components/TechnicalAnalysisPanel'), { ssr: false });
+const FairValuePanel = dynamic(() => import('./components/FairValuePanel'), { ssr: false });
 
 export default function Home() {
   const [ticker, setTicker] = useState('');
@@ -118,9 +123,9 @@ export default function Home() {
     <main className="dashboard-grid">
       {/* Header & Search */}
       <div className="col-span-12" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '16px', marginBottom: '32px' }}>
-        <h1 className="text-h1 gradient-text" style={{ marginBottom: '16px', textAlign: 'center' }}>Stock and Wave Analysis</h1>
-        <p className="text-body" style={{ textAlign: 'center', marginBottom: '32px', maxWidth: '640px' }}>
-          Premium stock analysis combining fundamental health, analyst consensus, and advanced Elliott Wave technical projections.
+        <h1 className="text-h1 gradient-text" style={{ marginBottom: '16px', textAlign: 'center', letterSpacing: '-0.03em', fontSize: '3rem' }}>Quanta Alpha</h1>
+        <p className="text-body" style={{ textAlign: 'center', marginBottom: '32px', maxWidth: '640px', fontSize: '1.1rem' }}>
+          Institutional-grade quantitative modeling, algorithmic Elliott Wave projections, and real-time sentiment analysis.
         </p>
 
         <div ref={searchRef} style={{ position: 'relative', width: '100%', maxWidth: '600px' }}>
@@ -169,9 +174,9 @@ export default function Home() {
           {/* Main Price & Pulse */}
           <div className="col-span-12 glass-panel fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <h2 className="text-h2" style={{ marginBottom: '8px' }}>{analysis.ticker || fundamentals.quote?.symbol}</h2>
+              <h2 className="text-h2 gradient-text" style={{ marginBottom: '8px', fontSize: '2.5rem', letterSpacing: '-0.02em' }}>{analysis.ticker || fundamentals.quote?.symbol}</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                <span className="text-h1">{formatPrice(fundamentals.quote?.regularMarketPrice)}</span>
+                <span className="text-h1" style={{ fontSize: '3rem', textShadow: '0 0 20px rgba(255,255,255,0.1)' }}>{formatPrice(fundamentals.quote?.regularMarketPrice)}</span>
                 <span className={fundamentals.quote?.regularMarketChangePercent >= 0 ? 'bg-success-soft' : 'bg-danger-soft'}>
                   {fundamentals.quote?.regularMarketChangePercent >= 0 ? '+' : ''}
                   {fundamentals.quote?.regularMarketChangePercent?.toFixed(2)}%
@@ -194,72 +199,77 @@ export default function Home() {
           </div>
 
           {/* Left Column: Fundamentals & Analyst */}
-          <div className="col-span-4 fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', animationDelay: '0.1s' }}>
-            <div className="glass-panel">
-              <h3 className="text-h3" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Activity size={20} style={{ color: 'var(--accent)' }} /> Company Fundamentals
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="stat-box">
-                  <span className="stat-label">Market Cap</span>
-                  <span className="stat-value">{formatNumber(fundamentals.summary?.summaryDetail?.marketCap)}</span>
-                </div>
-                <div className="stat-box">
-                  <span className="stat-label">Forward P/E</span>
-                  <span className="stat-value">{fundamentals.summary?.summaryDetail?.forwardPE?.toFixed(2) || 'N/A'}</span>
-                </div>
-                <div className="stat-box">
-                  <span className="stat-label">52W High</span>
-                  <span className="stat-value">{formatPrice(fundamentals.summary?.summaryDetail?.fiftyTwoWeekHigh)}</span>
-                </div>
-                <div className="stat-box">
-                  <span className="stat-label">Beta</span>
-                  <span className="stat-value">{fundamentals.summary?.summaryDetail?.beta?.toFixed(2) || 'N/A'}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-panel">
-              <h3 className="text-h3" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Target size={20} style={{ color: 'var(--accent)' }} /> Analyst Consensus
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div className="consensus-row">
-                  <span className="text-body">Recommendation</span>
-                  <span style={{
-                    fontWeight: 700,
-                    color: fundamentals.summary?.financialData?.recommendationKey?.includes('buy') ? 'var(--success)' :
-                      fundamentals.summary?.financialData?.recommendationKey?.includes('sell') ? 'var(--danger)' : 'var(--warning)'
-                  }}>
-                    {fundamentals.summary?.financialData?.recommendationKey?.toUpperCase() || 'N/A'}
-                  </span>
-                </div>
-                <div className="consensus-row">
-                  <span className="text-body">Target Price</span>
-                  <span style={{ fontWeight: 700 }}>{formatPrice(fundamentals.summary?.financialData?.targetMeanPrice)}</span>
-                </div>
-                {fundamentals.quote?.regularMarketPrice && fundamentals.summary?.financialData?.targetMeanPrice && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span className="text-small">Upside to Target</span>
-                      <span className="text-small" style={{
-                        color: fundamentals.summary.financialData.targetMeanPrice > fundamentals.quote.regularMarketPrice ? 'var(--success)' : 'var(--danger)'
-                      }}>
-                        {((fundamentals.summary.financialData.targetMeanPrice / fundamentals.quote.regularMarketPrice - 1) * 100).toFixed(2)}%
-                      </span>
-                    </div>
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          background: fundamentals.summary.financialData.targetMeanPrice > fundamentals.quote.regularMarketPrice ? 'var(--success)' : 'var(--danger)',
-                          width: `${Math.min(100, Math.max(5, (fundamentals.quote.regularMarketPrice / fundamentals.summary.financialData.targetMeanPrice) * 100))}%`
-                        }}
-                      ></div>
-                    </div>
+          <div className="col-span-4 fade-in desktop-sync-wrapper" style={{ animationDelay: '0.1s' }}>
+            <div className="desktop-sync-inner">
+              <div className="glass-panel">
+                <h3 className="text-h3" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Activity size={20} style={{ color: 'var(--accent)' }} /> Company Fundamentals
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="stat-box">
+                    <span className="stat-label">Market Cap</span>
+                    <span className="stat-value">{formatNumber(fundamentals.summary?.summaryDetail?.marketCap)}</span>
                   </div>
-                )}
+                  <div className="stat-box">
+                    <span className="stat-label">Forward P/E</span>
+                    <span className="stat-value">{fundamentals.summary?.summaryDetail?.forwardPE?.toFixed(2) || 'N/A'}</span>
+                  </div>
+                  <div className="stat-box">
+                    <span className="stat-label">52W High</span>
+                    <span className="stat-value">{formatPrice(fundamentals.summary?.summaryDetail?.fiftyTwoWeekHigh)}</span>
+                  </div>
+                  <div className="stat-box">
+                    <span className="stat-label">Beta</span>
+                    <span className="stat-value">{fundamentals.summary?.summaryDetail?.beta?.toFixed(2) || 'N/A'}</span>
+                  </div>
+                </div>
               </div>
+
+              <div className="glass-panel">
+                <h3 className="text-h3" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Target size={20} style={{ color: 'var(--accent)' }} /> Analyst Consensus
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="consensus-row">
+                    <span className="text-body">Recommendation</span>
+                    <span style={{
+                      fontWeight: 700,
+                      color: fundamentals.summary?.financialData?.recommendationKey?.includes('buy') ? 'var(--success)' :
+                        fundamentals.summary?.financialData?.recommendationKey?.includes('sell') ? 'var(--danger)' : 'var(--warning)'
+                    }}>
+                      {fundamentals.summary?.financialData?.recommendationKey?.toUpperCase() || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="consensus-row">
+                    <span className="text-body">Target Price</span>
+                    <span style={{ fontWeight: 700 }}>{formatPrice(fundamentals.summary?.financialData?.targetMeanPrice)}</span>
+                  </div>
+                  {fundamentals.quote?.regularMarketPrice && fundamentals.summary?.financialData?.targetMeanPrice && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span className="text-small">Upside to Target</span>
+                        <span className="text-small" style={{
+                          color: fundamentals.summary.financialData.targetMeanPrice > fundamentals.quote.regularMarketPrice ? 'var(--success)' : 'var(--danger)'
+                        }}>
+                          {((fundamentals.summary.financialData.targetMeanPrice / fundamentals.quote.regularMarketPrice - 1) * 100).toFixed(2)}%
+                        </span>
+                      </div>
+                      <div className="progress-bar">
+                        <div
+                          className="progress-fill"
+                          style={{
+                            background: fundamentals.summary.financialData.targetMeanPrice > fundamentals.quote.regularMarketPrice ? 'var(--success)' : 'var(--danger)',
+                            width: `${Math.min(100, Math.max(5, (fundamentals.quote.regularMarketPrice / fundamentals.summary.financialData.targetMeanPrice) * 100))}%`
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Live Social Feed */}
+              <StockTwitsFeed ticker={ticker} />
             </div>
           </div>
 
@@ -282,6 +292,7 @@ export default function Home() {
                   invalidationLevel={analysis.invalidationLevel}
                   pivots={analysis.pivots || []}
                   currentPrice={analysis.currentPrice}
+                  algoEngine={analysis.algoEngine}
                 />
               ) : (
                 <div style={{ height: '420px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
@@ -333,13 +344,62 @@ export default function Home() {
                   </div>
                 </div>
               )}
+
+              {/* Algorithmic Scorecard */}
+              {analysis.algoEngine && analysis.algoEngine.scorecard && (
+                <div style={{ marginTop: '24px', padding: '16px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                  <h4 style={{ marginBottom: '12px', color: 'var(--text-primary)' }}>Institutional Donchian Algorithm</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span className="text-small" style={{ color: 'var(--text-secondary)' }}>Mean W3 Target</span>
+                      <span style={{ fontWeight: 600 }}>{formatPrice(analysis.algoEngine.scorecard.meanW3)}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span className="text-small" style={{ color: 'var(--text-secondary)' }}>Mean W5 Target</span>
+                      <span style={{ fontWeight: 600, color: 'var(--success)' }}>{formatPrice(analysis.algoEngine.scorecard.meanW5)}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span className="text-small" style={{ color: 'var(--text-secondary)' }}>Donchian Position</span>
+                      <span style={{ fontWeight: 600 }}>{analysis.algoEngine.scorecard.dcPos.toFixed(1)}%</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span className="text-small" style={{ color: 'var(--text-secondary)' }}>Algo Score</span>
+                      <span style={{ fontWeight: 600, color: 'var(--accent)' }}>{analysis.algoEngine.scorecard.score}/100</span>
+                    </div>
+                  </div>
+                  <div style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px' }}>
+                    <div style={{ marginBottom: '8px' }}>
+                      <span className="text-small" style={{ color: 'var(--text-secondary)' }}>Verdict: </span>
+                      <span style={{
+                        fontWeight: 'bold',
+                        color: analysis.algoEngine.scorecard.verdict.includes('Buy') ? 'var(--success)' :
+                          analysis.algoEngine.scorecard.verdict.includes('Wait') ? 'var(--danger)' : 'var(--warning)'
+                      }}>
+                        {analysis.algoEngine.scorecard.verdict}
+                      </span>
+                    </div>
+                    <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                      {analysis.algoEngine.scorecard.reasons.map((r, i) => (
+                        <li key={i} className="text-small" style={{ color: 'var(--text-secondary)', marginBottom: '4px' }}>{r}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Thematic Outlook */}
+            {/* Technical Analysis Dashboard */}
+            {analysis.technicals && (
+              <div className="glass-panel">
+                <TechnicalAnalysisPanel technicals={analysis.technicals} />
+              </div>
+            )}
+
+            {/* Wave Narrative */}
             {analysis.thematicStory && (
               <div className="glass-panel">
                 <h3 className="text-h3" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <BookOpen size={20} style={{ color: 'var(--accent)' }} /> Thematic Outlook
+                  <BookOpen size={20} style={{ color: 'var(--accent)' }} /> Wave Invalidations & Narrative
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                   <div className="theme-card theme-card-bull">
@@ -357,6 +417,9 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            {/* SeekingAlpha Analyst Reports */}
+            <SeekingAlphaFeed ticker={ticker} />
           </div>
 
           {/* Full-Width: Earnings Tracker */}
@@ -390,14 +453,44 @@ export default function Home() {
             </div>
           )}
 
+          {/* Full-Width: Fair Value Models */}
+          {fundamentals.valuation && (
+            <div className="col-span-12 fade-in" style={{ animationDelay: '0.42s' }}>
+              <div className="glass-panel">
+                <FairValuePanel valuation={fundamentals.valuation} />
+              </div>
+            </div>
+          )}
+
+          {/* Full-Width: Buffett Analysis */}
+          {fundamentals.buffett && (
+            <div className="col-span-12 fade-in" style={{ animationDelay: '0.45s' }}>
+              <div className="glass-panel">
+                <BuffettAnalysis buffett={fundamentals.buffett} />
+              </div>
+            </div>
+          )}
+
           {/* Full-Width: RSI Backtest */}
-          <div className="col-span-12 fade-in" style={{ animationDelay: '0.45s' }}>
+          <div className="col-span-12 fade-in" style={{ animationDelay: '0.5s' }}>
             <div className="glass-panel">
               <BacktestPanel ticker={ticker} />
             </div>
           </div>
         </>
       )}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .desktop-sync-wrapper { position: relative; height: 100%; }
+        .desktop-sync-inner { display: flex; flex-direction: column; gap: 24px; height: 100%; }
+        @media (min-width: 1024px) {
+          .desktop-sync-inner { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+        }
+        .feed-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        @media (max-width: 1024px) {
+          .feed-panel { min-height: 400px; max-height: 600px; }
+        }
+      `}} />
     </main>
   );
 }
